@@ -65,6 +65,32 @@ def get_trip(trip_id: int):
         raise HTTPException(status_code=404, detail=f"Trip with id {trip_id} not found")
     return trip
 
+@app.post("/api/v1/trips/{trip_id}/generate")
+def generate_ai_recommendation(trip_id: int):
+    db = SessionLocal()
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+
+    if trip is None:
+        db.close()
+        raise HTTPException(
+            status_code=404,
+            detail=f"Trip with id {trip_id} not found"
+        )
+
+    ai_recommendation = get_ai_recommendations(
+        destination=trip.destination,
+        days=trip.days,
+        budget=trip.budget,
+        travel_style=trip.category,
+    )
+
+    trip.ai_recommendation = ai_recommendation
+
+    db.commit()
+    db.refresh(trip)
+    db.close()
+    return trip
+
 @app.post("/api/v1/trips")
 def create_trip(request: TripRequest):
     daily_budget = calculate_daily_budget(
