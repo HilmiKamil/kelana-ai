@@ -1,5 +1,5 @@
 import os
-import json
+import re
 import boto3
 from dotenv import load_dotenv
 
@@ -21,7 +21,7 @@ def get_ai_recommendations(
     travel_style: str,
 ) -> str:
     """
-    Generate a travel itinerary using Amazon Bedrock.
+    Generate a structured travel itinerary using Amazon Bedrock.
 
     Args:
         days: Number of days for the trip.
@@ -30,24 +30,38 @@ def get_ai_recommendations(
         travel_style: Preferred travel style (e.g. adventure, luxury, budget).
 
     Returns:
-        Generated itinerary text from the model.
+        A raw JSON string matching the required itinerary schema.
     """
     prompt = (
         f"You are an experienced travel planner. Plan a {days}-day itinerary for {destination}.\n\n"
         f"Budget: USD {budget}\n"
         f"Travel Style: {travel_style}\n\n"
-        f"Please provide the following for each day:\n"
-        f"- A detailed daily itinerary structured into three parts:\n"
-        f"  - Morning: 2-3 morning activities (e.g. sightseeing, outdoor adventures, or local experiences)\n"
-        f"  - Afternoon: cultural sites and experiences to explore\n"
-        f"  - Evening: dinner spots and nightlife recommendations\n"
-        f"- Estimated daily budget breakdown (accommodation, food, transport, activities)\n"
-        f"- Local food recommendations including must-try dishes and restaurants\n"
-        f"- Transportation suggestions for getting around within {destination}\n\n"
-        f"Format your response as Markdown with headers (##) and bullet lists (-)."
+        f"Respond ONLY with a single valid JSON object — no explanation, no markdown code block, no extra text.\n\n"
+        f"The JSON must follow this exact schema:\n"
+        f'{{\n'
+        f'  "itinerary": [\n'
+        f'    {{"day": "Day 1", "activities": "..."}},\n'
+        f'    {{"day": "Day 2", "activities": "..."}}\n'
+        f'  ],\n'
+        f'  "travel_tips": ["...", "..."],\n'
+        f'  "local_food": ["...", "..."],\n'
+        f'  "budget_breakdown": {{\n'
+        f'    "accommodation": 0,\n'
+        f'    "food": 0,\n'
+        f'    "transport": 0,\n'
+        f'    "total": 0\n'
+        f'  }}\n'
+        f'}}\n\n'
+        f"Rules for the text values inside the JSON:\n"
+        f"- Use **bold** (double asterisks) for emphasis on important names or highlights.\n"
+        f"- Use '-' at the start of a line for bullet points.\n"
+        f"- Use \\n for line breaks within a string value.\n"
+        f"- The 'itinerary' array must contain exactly {days} objects, one per day.\n"
+        f"- 'budget_breakdown' values must be numbers (USD), and 'total' must equal the sum of the others.\n"
+        f"- Do NOT wrap the output in ```json or any other markdown. Return pure JSON only."
     )
 
-    # Converse API — works across Nova, Claude, Llama, and other Bedrock models
+    # Converse API — model-agnostic, works with Nova, Claude, Llama, etc.
     response = bedrock_client.converse(
         modelId=MODEL_ID,
         messages=[
@@ -58,6 +72,10 @@ def get_ai_recommendations(
         ],
     )
 
-    # Extract the assistant's reply text
-    itinerary: str = response["output"]["message"]["content"][0]["text"]
-    return itinerary
+    raw: str = response["output"]["message"]["content"][0]["text"]
+
+    # Strip any accidental ```json ... ``` wrapping the model might still add
+    clean = re.sub(r"^```(?:json)?\s*", "", raw.strip())
+    clean = re.sub(r"\s*```$", "", clean.strip())
+
+    return clean.strip()

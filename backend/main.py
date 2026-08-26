@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from services.trip_service import (
     calculate_daily_budget,
@@ -20,6 +21,14 @@ class TripUpdate(BaseModel):
     budget: float
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Mengizinkan semua domain (termasuk localhost:3000)
+    allow_credentials=True,
+    allow_methods=["*"],  # Mengizinkan POST, GET, dll
+    allow_headers=["*"],
+)
 
 init_db()
 
