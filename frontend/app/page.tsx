@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { generateTrip } from "@/services/tripService";
 
 // ---------------------------------------------------------------------------
 // Types (UNCHANGED)
@@ -17,7 +19,7 @@ interface TripResult {
   id?: number;
   destination: string;
   budget: number;
-  ai_recommendation: string;
+  ai_recommendation: string | null;
 }
 
 interface ItineraryDay {
@@ -266,9 +268,10 @@ export default function Home() {
   const [result, setResult] = useState<TripResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   // UNCHANGED
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
@@ -280,23 +283,15 @@ export default function Home() {
     setResult(null);
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/trips", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          destination: form.destination,
-          budget: Number(form.budget),
-          days: Number(form.days),
-          travel_style: form.travel_style,
-        }),
+      const data = await generateTrip({
+        destination: form.destination,
+        budget: Number(form.budget),
+        days: Number(form.days),
+        travel_style: form.travel_style,
       });
 
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
-      }
-
-      const data: TripResult = await response.json();
       setResult(data);
+      router.push("/trips");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -319,7 +314,7 @@ export default function Home() {
 
   // ── RESULT VIEW — 2-column grid ──────────────────────────────────────────
   if (result) {
-    const parsed = parseAiRecommendation(result.ai_recommendation);
+    const parsed = parseAiRecommendation(result.ai_recommendation ?? "");
 
     return (
       <main className="min-h-screen bg-slate-900 font-mono">
@@ -417,7 +412,7 @@ export default function Home() {
             // Fallback — raw text
             <div className="bg-blue-900 border-4 border-white p-4 mt-6">
               <div className="font-mono text-sm text-white leading-loose whitespace-pre-wrap">
-                {formatBoldText(result.ai_recommendation)}
+                {formatBoldText(result.ai_recommendation ?? "")}
               </div>
             </div>
           )}
@@ -513,15 +508,18 @@ export default function Home() {
             <label className="block font-mono text-xs text-slate-300 uppercase tracking-wide mb-1">
               ⚔ TRAVEL STYLE (CLASS)
             </label>
-            <input
-              type="text"
+            <select
               name="travel_style"
-              placeholder="e.g. FAMILY, ADVENTURE, LUXURY"
               value={form.travel_style}
               onChange={handleChange}
               required
-              className="w-full bg-black border-2 border-slate-500 text-green-400 font-mono text-sm px-3 py-2 outline-none placeholder-slate-600 focus:border-yellow-400"
-            />
+              className="w-full bg-black border-2 border-slate-500 text-green-400 font-mono text-sm px-3 py-2 outline-none focus:border-yellow-400 uppercase cursor-pointer"
+            >
+              <option value="" disabled>-- SELECT CLASS --</option>
+              <option value="Solo">👤 SOLO</option>
+              <option value="Couple">👫 COUPLE</option>
+              <option value="Family">👨‍👩‍👧‍👦 FAMILY</option>
+            </select>
           </div>
 
           <button

@@ -6,10 +6,13 @@ from services.trip_service import (
     get_trip_category,
     get_transportation_recommendation
 )
+import os
+from dotenv import load_dotenv
 from services.bedrock_service import get_ai_recommendations
 from models.trip import Trip
-
 from database import init_db, SessionLocal
+
+load_dotenv()
 
 class TripRequest(BaseModel):
     destination: str
@@ -24,7 +27,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Mengizinkan semua domain (termasuk localhost:3000)
+    allow_origins=[os.getenv("FRONTEND_URL", "http://localhost:3000")],  # Mengizinkan semua domain (termasuk localhost:3000)
     allow_credentials=True,
     allow_methods=["*"],  # Mengizinkan POST, GET, dll
     allow_headers=["*"],
@@ -120,6 +123,7 @@ def create_trip(request: TripRequest):
         budget = request.budget,
         category = category,
         daily_budget = daily_budget,
+        travel_style = request.travel_style,
         ai_recommendation = ai_recommendation,
     )
 
