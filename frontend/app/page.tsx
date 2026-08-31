@@ -282,18 +282,37 @@ export default function Home() {
     setError(null);
     setResult(null);
 
+    // Read token inside the event handler — safe here because this only
+    // runs on the client in response to a user action, never during SSR.
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
     try {
-      const data = await generateTrip({
-        destination: form.destination,
-        budget: Number(form.budget),
-        days: Number(form.days),
-        travel_style: form.travel_style,
-      });
+      const data = await generateTrip(
+        {
+          destination: form.destination,
+          budget: Number(form.budget),
+          days: Number(form.days),
+          travel_style: form.travel_style,
+        },
+        token,
+      );
 
       setResult(data);
       router.push("/trips");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      // 401 means the token has expired — clear it and send to login
+      const message = err instanceof Error ? err.message : "Something went wrong.";
+      if (message.includes("401") || message.includes("403")) {
+        localStorage.removeItem("token");
+        router.push("/login");
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,10 @@
+"use client";
+
+import { useState, useEffect, use } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getTrip } from "@/services/tripService";
+import { Trip } from "@/services/tripService";
 
 // ---------------------------------------------------------------------------
 // Shared retro UI primitives (local — no extra import needed)
@@ -205,16 +210,85 @@ function AiRecommendationSection({ raw }: { raw: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Page — async Server Component
+// Page — Client Component
+// Unwraps params with React.use(), reads token from localStorage in
+// useEffect (client-only), then fetches the trip with the Bearer token.
 // ---------------------------------------------------------------------------
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function TripDetailPage({ params }: PageProps) {
-  const resolvedParams = await params;
-  const trip = await getTrip(Number(resolvedParams.id));
+export default function TripDetailPage({ params }: PageProps) {
+  // Unwrap the params Promise with React.use() — required in Next.js 15
+  const { id } = use(params);
+
+  const router = useRouter();
+
+  const [trip,      setTrip]      = useState<Trip | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error,     setError]     = useState<string | null>(null);
+
+  useEffect(() => {
+    // Safe to access localStorage here — useEffect runs only on the client
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    getTrip(Number(id), token)
+      .then((data) => setTrip(data))
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : "Failed to load trip.";
+        // Token expired or invalid — clear and redirect
+        if (message.includes("401") || message.includes("403")) {
+          localStorage.removeItem("token");
+          router.push("/login");
+        } else {
+          setError(message);
+        }
+      })
+      .finally(() => setIsLoading(false));
+  }, [id, router]);
+
+  // ── Loading state ──────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-slate-900 flex items-center justify-center font-mono">
+        <div className="text-center">
+          <div className="text-yellow-400 text-4xl mb-4 animate-pulse">[ ▓▓▓░░░ ]</div>
+          <p className="text-slate-400 text-xs uppercase tracking-widest">
+            LOADING QUEST DETAIL...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  // ── Error state ────────────────────────────────────────────────────────
+  if (error) {
+    return (
+      <main className="min-h-screen bg-slate-900 flex items-center justify-center font-mono px-4">
+        <div className="w-full max-w-md bg-red-900 border-4 border-red-400 p-6 text-center">
+          <p className="font-mono text-red-300 text-xs uppercase tracking-widest mb-2">
+            ⚠ ERROR
+          </p>
+          <p className="font-mono text-red-200 text-sm mb-4">{error}</p>
+          <Link
+            href="/trips"
+            className="bg-red-600 border-2 border-white text-white font-mono text-xs uppercase tracking-widest px-4 py-2 hover:bg-white hover:text-red-600"
+          >
+            ◀ BACK TO TRIPS
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  // ── No data (should not normally happen after loading) ─────────────────
+  if (!trip) return null;
 
   return (
     <main className="min-h-screen bg-slate-900 font-mono">
@@ -242,23 +316,18 @@ export default async function TripDetailPage({ params }: PageProps) {
 
         {/* ── Overview grid ── */}
         <div className="grid grid-cols-2 gap-3 mt-6 mb-8">
-
           <StatBox icon="📍" label="Destination">
             {trip.destination}
           </StatBox>
-
           <StatBox icon="💰" label="Budget">
             USD {trip.budget.toLocaleString()}
           </StatBox>
-
           <StatBox icon="🎒" label="Category">
             <CategoryBadge category={trip.category} />
           </StatBox>
-
           <StatBox icon="📅" label="Days">
             {trip.days} DAYS
           </StatBox>
-
         </div>
 
         {/* ── AI Recommendation ── */}
