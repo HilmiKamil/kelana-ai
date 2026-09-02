@@ -7,8 +7,11 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from botocore.exceptions import ClientError
+
 from database import init_db
 from models.trip import Trip
+from models.user import User
 from services.auth_service import (
     get_current_user,
     get_db,
@@ -16,12 +19,12 @@ from services.auth_service import (
     register_user,
 )
 from services.bedrock_service import get_ai_recommendations
+from services.kb_service import retrieve_and_generate
 from services.trip_service import (
     calculate_daily_budget,
     get_trip_category,
     get_transportation_recommendation,
 )
-from models.user import User
 
 load_dotenv()
 
@@ -46,6 +49,14 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+class AskRequest(BaseModel):
+    question: str
+
+class AskResponse(BaseModel):
+    question:  str
+    answer:    str
+    documents: list[str]
 
 # ---------------------------------------------------------------------------
 # App + middleware
@@ -274,3 +285,38 @@ def update_trip(
     db.commit()
     db.refresh(trip)
     return trip
+
+
+# ---------------------------------------------------------------------------
+# Knowledge Base / RAG endpoint
+# ---------------------------------------------------------------------------
+
+@app.post("/api/v1/ask", response_model=AskResponse)
+def ask_knowledge_base(request: AskRequest):
+    """
+    Accept a natural-language question, run RAG against the Bedrock
+    Knowledge Base, and return the generated answer together with the
+    list of source documents that were retrieved.
+    """
+    try:
+        result = retrieve_and_generate(request.question)
+        return AskResponse(
+            question=request.question,
+            answer=result["answer"],
+            documents=result["documents"],
+        )
+
+    except ClientError as exc:
+        error   = exc.response.get("Error", {})
+        code    = error.get("Code",    "UnknownCode")
+        message = error.get("Message", "No message provided by AWS.")
+        raise HTTPException(
+            status_code=502,
+            detail=f"AWS Bedrock error [{code}]: {message}",
+        )
+
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error: {str(exc)}",
+        )
