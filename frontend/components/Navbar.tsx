@@ -10,9 +10,10 @@ import { getProfile, removeToken } from "@/services/authService";
 // ---------------------------------------------------------------------------
 
 const NAV_LINKS = [
-  { href: "/",        label: "NEW QUEST",    icon: "⚔"  },
-  { href: "/trips",   label: "TRIP HISTORY", icon: "📜" },
-  { href: "/profile", label: "PROFILE",      icon: "🧑" },
+  { href: "/",          label: "NEW QUEST",    icon: "⚔"  },
+  { href: "/trips",     label: "TRIP HISTORY", icon: "📜" },
+  { href: "/chat",      label: "CHAT",         icon: "💬" },
+  { href: "/profile",   label: "PROFILE",      icon: "🧑" },
 ];
 
 // ---------------------------------------------------------------------------

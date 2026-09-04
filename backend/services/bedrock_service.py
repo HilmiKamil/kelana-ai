@@ -79,3 +79,49 @@ def get_ai_recommendations(
     clean = re.sub(r"\s*```$", "", clean.strip())
 
     return clean.strip()
+
+
+def get_chat_response(messages: list) -> str:
+    """
+    Send a full conversation history to Amazon Bedrock and return the
+    AI reply as a plain string.
+
+    This function is context-aware — it forwards the complete message
+    history so the model can refer to any prior turn in the conversation,
+    not just the most recent message.
+
+    Args:
+        messages: List of Message ORM objects ordered oldest → newest.
+                  Each object must expose .role ("user" | "assistant")
+                  and .content (str).
+
+    Returns:
+        The assistant's reply text.
+
+    Bedrock Converse message format expected:
+        [
+            {"role": "user",      "content": [{"text": "..."}]},
+            {"role": "assistant", "content": [{"text": "..."}]},
+            ...
+        ]
+
+    Note: The Converse API requires the turns to alternate strictly
+    (user → assistant → user → ...) and the first turn must be "user".
+    This is guaranteed as long as messages are saved correctly by the
+    caller (send_message endpoint).
+    """
+    # Build the array expected by the Bedrock Converse API
+    bedrock_messages = [
+        {
+            "role":    msg.role,
+            "content": [{"text": msg.content}],
+        }
+        for msg in messages
+    ]
+
+    response = bedrock_client.converse(
+        modelId=MODEL_ID,
+        messages=bedrock_messages,
+    )
+
+    return response["output"]["message"]["content"][0]["text"]
