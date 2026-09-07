@@ -1,4 +1,19 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+// ---------------------------------------------------------------------------
+// URL helper
+// Strips any trailing slash from NEXT_PUBLIC_API_URL so callers can safely
+// append paths starting with "/" without creating double slashes (//).
+//
+// Supports both:
+//   NEXT_PUBLIC_API_URL=http://localhost:8000          → base only
+//   NEXT_PUBLIC_API_URL=http://localhost:8000/         → trailing slash stripped
+// ---------------------------------------------------------------------------
+
+export function getCleanApiUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  return raw.replace(/\/+$/, ""); // remove one or more trailing slashes
+}
+
+const BASE_URL = getCleanApiUrl();
 
 // ---------------------------------------------------------------------------
 // Types
@@ -6,23 +21,23 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export interface LoginResponse {
   access_token: string;
-  token_type: string;
+  token_type:   string;
 }
 
 export interface RegisterResponse {
-  id: number;
-  name: string;
+  id:    number;
+  name:  string;
   email: string;
 }
 
 export interface UserProfile {
-  id: number;
-  name: string;
+  id:    number;
+  name:  string;
   email: string;
 }
 
 // ---------------------------------------------------------------------------
-// Token helpers — centralised so every service reads/writes the same key
+// Token helpers — single source of truth for the localStorage "token" key
 // ---------------------------------------------------------------------------
 
 export function getToken(): string | null {
@@ -39,7 +54,7 @@ export function removeToken(): void {
 }
 
 // ---------------------------------------------------------------------------
-// Auth header helper — attach to any authenticated request
+// Auth header helper — attach to any authenticated fetch call
 // ---------------------------------------------------------------------------
 
 export function authHeaders(): Record<string, string> {
@@ -50,14 +65,13 @@ export function authHeaders(): Record<string, string> {
 // ---------------------------------------------------------------------------
 // login(email, password)
 // POST /api/v1/auth/login
-// Throws an Error with a human-readable message on any non-200 response.
 // ---------------------------------------------------------------------------
 
 export async function login(email: string, password: string): Promise<LoginResponse> {
-  const res = await fetch(`${API_URL}/auth/login`, {
-    method: "POST",
+  const res = await fetch(`${BASE_URL}/api/v1/auth/login`, {
+    method:  "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body:    JSON.stringify({ email, password }),
   });
 
   if (res.status === 401) {
@@ -65,7 +79,7 @@ export async function login(email: string, password: string): Promise<LoginRespo
   }
 
   if (!res.ok) {
-    throw new Error(`Login failed with status ${res.status}. Please try again.`);
+    throw new Error(`Login failed (${res.status}). Please try again.`);
   }
 
   return res.json() as Promise<LoginResponse>;
@@ -74,18 +88,17 @@ export async function login(email: string, password: string): Promise<LoginRespo
 // ---------------------------------------------------------------------------
 // register(name, email, password)
 // POST /api/v1/auth/register
-// Throws an Error with a human-readable message on any non-2xx response.
 // ---------------------------------------------------------------------------
 
 export async function register(
-  name: string,
-  email: string,
+  name:     string,
+  email:    string,
   password: string,
 ): Promise<RegisterResponse> {
-  const res = await fetch(`${API_URL}/auth/register`, {
-    method: "POST",
+  const res = await fetch(`${BASE_URL}/api/v1/auth/register`, {
+    method:  "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, email, password }),
+    body:    JSON.stringify({ name, email, password }),
   });
 
   if (res.status === 409) {
@@ -93,7 +106,7 @@ export async function register(
   }
 
   if (!res.ok) {
-    throw new Error(`Registration failed with status ${res.status}. Please try again.`);
+    throw new Error(`Registration failed (${res.status}). Please try again.`);
   }
 
   return res.json() as Promise<RegisterResponse>;
@@ -102,14 +115,13 @@ export async function register(
 // ---------------------------------------------------------------------------
 // getProfile(token)
 // GET /api/v1/auth/me
-// Returns the authenticated user's id, name, and email.
-// Identity is derived entirely from the JWT — no user_id in the URL.
+// Identity is derived from the JWT — no user_id in the URL.
 // ---------------------------------------------------------------------------
 
 export async function getProfile(token: string): Promise<UserProfile> {
-  const res = await fetch(`${API_URL}/auth/me`, {
+  const res = await fetch(`${BASE_URL}/api/v1/auth/me`, {
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type":  "application/json",
       "Authorization": `Bearer ${token}`,
     },
   });
@@ -119,7 +131,7 @@ export async function getProfile(token: string): Promise<UserProfile> {
   }
 
   if (!res.ok) {
-    throw new Error(`Failed to load profile: ${res.status}`);
+    throw new Error(`Failed to load profile (${res.status}). Please try again.`);
   }
 
   return res.json() as Promise<UserProfile>;
