@@ -1,0 +1,22 @@
+# Virtual environment — never copy into the image
+.venv/
+
+# Environment files — secrets must be injected at runtime, not baked in
+.env
+.env_local
+
+# Python cache
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# npm artifacts — the backend/package.json is a mistake; node_modules has no place here
+node_modules/
+package.json
+package-lock.json
+
+# Local development files
+*.log
+.DS_Store
