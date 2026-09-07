@@ -1,0 +1,6 @@
+{
+  // Suppress "Unknown at rule" warnings for Tailwind v4 directives
+  // (@theme, @utility, @variant, etc.) that the VS Code CSS language
+  // server doesn't recognise but are perfectly valid at runtime.
+  "css.lint.unknownAtRules": "ignore"
+}

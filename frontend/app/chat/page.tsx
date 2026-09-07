@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
+import { getCleanApiUrl } from "@/services/authService";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+const BASE_URL = getCleanApiUrl();
 
 // ---------------------------------------------------------------------------
 // Types
@@ -27,7 +28,7 @@ interface Conversation {
 // ---------------------------------------------------------------------------
 
 async function apiFetchConversations(token: string): Promise<Conversation[]> {
-  const res = await fetch(`${API_URL}/conversations`, {
+  const res = await fetch(`${BASE_URL}/api/v1/conversations`, {
     headers: { "Authorization": `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(`Failed to load conversations: ${res.status}`);
@@ -35,13 +36,12 @@ async function apiFetchConversations(token: string): Promise<Conversation[]> {
 }
 
 async function apiCreateConversation(token: string, title?: string): Promise<number> {
-  const res = await fetch(`${API_URL}/conversations`, {
+  const res = await fetch(`${BASE_URL}/api/v1/conversations`, {
     method:  "POST",
     headers: {
       "Content-Type":  "application/json",
       "Authorization": `Bearer ${token}`,
     },
-    // Send title if provided; omit the key entirely when undefined
     body: JSON.stringify(title ? { title } : {}),
   });
   if (!res.ok) throw new Error(`Failed to create conversation: ${res.status}`);
@@ -50,7 +50,7 @@ async function apiCreateConversation(token: string, title?: string): Promise<num
 }
 
 async function apiFetchMessages(conversationId: number, token: string): Promise<Message[]> {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/messages`, {
+  const res = await fetch(`${BASE_URL}/api/v1/conversations/${conversationId}/messages`, {
     headers: { "Authorization": `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(`Failed to load messages: ${res.status}`);
@@ -62,7 +62,7 @@ async function apiSendMessage(
   message: string,
   token: string,
 ): Promise<Message> {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/messages`, {
+  const res = await fetch(`${BASE_URL}/api/v1/conversations/${conversationId}/messages`, {
     method:  "POST",
     headers: {
       "Content-Type":  "application/json",
@@ -79,7 +79,7 @@ async function apiRenameConversation(
   title: string,
   token: string,
 ): Promise<void> {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}`, {
+  const res = await fetch(`${BASE_URL}/api/v1/conversations/${conversationId}`, {
     method:  "PATCH",
     headers: {
       "Content-Type":  "application/json",
@@ -94,7 +94,7 @@ async function apiDeleteConversation(
   conversationId: number,
   token: string,
 ): Promise<void> {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}`, {
+  const res = await fetch(`${BASE_URL}/api/v1/conversations/${conversationId}`, {
     method:  "DELETE",
     headers: { "Authorization": `Bearer ${token}` },
   });
