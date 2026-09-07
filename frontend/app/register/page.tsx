@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { register } from "@/services/authService";
 
 // ---------------------------------------------------------------------------
 // Shared retro primitives (local)
@@ -29,8 +30,6 @@ export default function RegisterPage() {
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState<string | null>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
   // Shared input class — identical to login page and main form
   const inputClass =
     "w-full bg-black border-2 border-slate-500 text-green-400 font-mono text-sm px-3 py-2 outline-none placeholder-slate-600 focus:border-yellow-400";
@@ -41,26 +40,11 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      const res = await fetch(`${API_URL}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      if (res.status === 409) {
-        setError("This email is already registered. Try logging in instead.");
-        return;
-      }
-
-      if (!res.ok) {
-        setError(`Unexpected server error: ${res.status}`);
-        return;
-      }
-
+      await register(name, email, password);
       // 201 Created — redirect to login so the user can authenticate
       router.push("/login");
-    } catch {
-      setError("Could not connect to the server. Make sure the backend is running.");
+    } catch (err: any) {
+      setError(err.message ?? "Could not connect to the server. Make sure the backend is running.");
     } finally {
       setLoading(false);
     }
