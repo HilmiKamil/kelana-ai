@@ -11,8 +11,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "KelanaAI — AI Travel Planner",
+  title:       "KelanaAI — AI Travel Planner",
   description: "Plan your next adventure with AI-powered itineraries",
+  icons: {
+    icon:    "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple:   "/apple-icon.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
