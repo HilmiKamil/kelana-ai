@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AboutCTA from "@/components/AboutCTA";
 
 // ---------------------------------------------------------------------------
 // About Page — /about
@@ -25,19 +26,10 @@ function SectionLabel({ icon, title }: { icon: string; title: string }) {
 }
 
 const FEATURES = [
-  { icon: "🗺",  label: "AI Trip Planner",       desc: "Generate full multi-day itineraries with Amazon Bedrock Nova." },
-  { icon: "💬",  label: "Travel Chat",            desc: "Conversational AI assistant with persistent memory per session." },
-  { icon: "📚",  label: "Knowledge Base (RAG)",   desc: "Answers grounded in your uploaded travel documents via Bedrock KB." },
-  { icon: "📜",  label: "Trip History",           desc: "Save, browse, filter, and revisit past itineraries." },
-  { icon: "🔐",  label: "Secure Auth",            desc: "JWT-based stateless authentication with bcrypt password hashing." },
-];
-
-const TECH_STACK = [
-  { layer: "FRONTEND",  items: "Next.js 15, TypeScript, Tailwind CSS v4, React" },
-  { layer: "BACKEND",   items: "FastAPI, Python 3.12, SQLAlchemy, PostgreSQL" },
-  { layer: "AI / AWS",  items: "Amazon Bedrock (Nova Lite), Bedrock Knowledge Base" },
-  { layer: "AUTH",      items: "JWT (python-jose), bcrypt, HTTP Bearer tokens" },
-  { layer: "DEPLOY",    items: "Render (backend) · Vercel (frontend) · Neon (DB)" },
+  { icon: "🗺",  label: "AI Trip Planner",     desc: "Generate full multi-day itineraries with Amazon Bedrock Nova." },
+  { icon: "💬",  label: "Travel Chat",          desc: "Conversational AI assistant with persistent memory per session." },
+  { icon: "📚",  label: "Knowledge Base (RAG)", desc: "Answers grounded in your uploaded travel documents via Bedrock KB." },
+  { icon: "📜",  label: "Trip History",         desc: "Save, browse, filter, and revisit past itineraries." },
 ];
 
 export default function AboutPage() {
@@ -95,40 +87,8 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* ── Tech stack ── */}
-        <div>
-          <SectionLabel icon="🛠" title="TECH STACK" />
-          <div className="bg-blue-900 border-4 border-white p-4">
-            <div className="flex flex-col gap-3">
-              {TECH_STACK.map(({ layer, items }) => (
-                <div key={layer} className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-1 sm:gap-3">
-                  <span className="font-mono text-xs text-yellow-400 uppercase tracking-widest font-bold pt-0.5">
-                    {layer}
-                  </span>
-                  <span className="font-mono text-sm text-white leading-relaxed">
-                    {items}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
         {/* ── CTA buttons ── */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Link
-            href="/"
-            className="flex-1 bg-red-600 border-4 border-white text-white font-mono font-bold text-xs uppercase tracking-widest py-3 text-center hover:bg-white hover:text-red-600"
-          >
-            ⚔ START PLANNING
-          </Link>
-          <Link
-            href="/register"
-            className="flex-1 bg-black border-4 border-yellow-400 text-yellow-400 font-mono font-bold text-xs uppercase tracking-widest py-3 text-center hover:bg-yellow-400 hover:text-black"
-          >
-            📝 CREATE ACCOUNT
-          </Link>
-        </div>
+        <AboutCTA />
 
       </div>
     </main>
