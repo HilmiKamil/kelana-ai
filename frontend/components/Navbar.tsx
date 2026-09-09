@@ -10,10 +10,11 @@ import { getProfile, removeToken } from "@/services/authService";
 // ---------------------------------------------------------------------------
 
 const NAV_LINKS = [
-  { href: "/",          label: "NEW QUEST",    icon: "⚔"  },
-  { href: "/trips",     label: "TRIP HISTORY", icon: "📜" },
-  { href: "/chat",      label: "CHAT",         icon: "💬" },
-  { href: "/profile",   label: "PROFILE",      icon: "🧑" },
+  { href: "/",       label: "NEW QUEST",    icon: "⚔"  },
+  { href: "/trips",  label: "TRIP HISTORY", icon: "📜" },
+  { href: "/chat",   label: "CHAT",         icon: "💬" },
+  { href: "/profile",label: "PROFILE",      icon: "🧑" },
+  { href: "/about",  label: "ABOUT",        icon: "ℹ"  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -99,19 +100,34 @@ export default function Navbar() {
           </div>
         )}
 
-        {/* ── Non-auth pages, NOT logged in: show Login button only ── */}
+        {/* ── Non-auth pages, NOT logged in: show Login + About links ── */}
         {!isAuthPage && !isLoggedIn && (
-          <Link
-            href="/login"
-            className="
-              inline-flex items-center gap-1.5 px-3 py-1.5 shrink-0
-              bg-transparent border-2 border-yellow-400 text-yellow-400
-              font-mono text-xs uppercase tracking-widest font-bold
-              hover:bg-yellow-400 hover:text-black
-            "
-          >
-            🔑 <span className="hidden sm:inline">LOGIN</span>
-          </Link>
+          <div className="flex items-center gap-1">
+            <Link
+              href="/about"
+              className={`
+                inline-flex items-center gap-1.5 px-3 py-1.5 shrink-0
+                bg-transparent border-2 font-mono text-xs uppercase tracking-widest font-bold
+                ${pathname === "/about"
+                  ? "bg-yellow-400 border-yellow-400 text-black"
+                  : "border-slate-600 text-slate-400 hover:border-yellow-400 hover:text-yellow-400"
+                }
+              `}
+            >
+              ℹ <span className="hidden sm:inline">ABOUT</span>
+            </Link>
+            <Link
+              href="/login"
+              className="
+                inline-flex items-center gap-1.5 px-3 py-1.5 shrink-0
+                bg-transparent border-2 border-yellow-400 text-yellow-400
+                font-mono text-xs uppercase tracking-widest font-bold
+                hover:bg-yellow-400 hover:text-black
+              "
+            >
+              🔑 <span className="hidden sm:inline">LOGIN</span>
+            </Link>
+          </div>
         )}
 
         {/* ── Non-auth pages, logged in: show full nav ── */}
